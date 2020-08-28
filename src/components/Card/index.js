@@ -1,14 +1,17 @@
-import React, { useRef } from 'react';
-import { useDrag, useDrop } from 'react-dnd'
+import React, { useRef, useContext } from 'react';
+import { useDrag, useDrop } from 'react-dnd';
 
-import { Container, Label } from './styles'
+import BoardConext from '../Board/context';
+
+import { Container, Label } from './styles';
  
 
-export default function Card({ data, index }){
+export default function Card({ data, index, listIndex }){
     const ref = useRef();
+    const { move } = useContext(BoardConext);
    
     const [{ isDragging }, dragRef] = useDrag({
-        item: { type: 'CARD',index , id: data.id, content:data.content },
+        item: { type: 'CARD',index , id: data.id, content:data.content, listIndex },
         collect: monitor => ({
             isDragging: monitor.isDragging(),
         })
@@ -19,8 +22,10 @@ export default function Card({ data, index }){
         hover(item,monitor){
             const draggedIndex = item.index;
             const targetIndex = index;
+            const draggedListIndex = item.listIndex;
+            const targetListIndex = listIndex;
 
-            if(draggedIndex === targetIndex){
+            if(draggedIndex === targetIndex && draggedListIndex === targetListIndex){
                 return;
             }
 
@@ -28,7 +33,20 @@ export default function Card({ data, index }){
             const targetCenter = (targetSize.bottom - targetSize.top) / 2;
 
             const draggedOffSet = monitor.getClientOffset();
-            const draggedTop = draggedOffSet.y - targetSize.top
+            const draggedTop = draggedOffSet.y - targetSize.top;
+
+            if(draggedIndex < targetIndex && draggedTop < targetCenter){
+                return;
+            }
+
+            if(draggedIndex > targetIndex && draggedTop > targetCenter){
+                return
+            }
+
+            move(draggedListIndex, targetListIndex, draggedIndex, targetIndex);
+
+            item.index = targetIndex;
+            item.listIndex = targetListIndex;
         }
     });
 
